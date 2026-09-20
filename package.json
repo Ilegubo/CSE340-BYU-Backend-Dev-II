@@ -1,0 +1,21 @@
+{
+  "name": "cse340-byu-backend-dev-ii",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Learn backend development with BYU-Pathway",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon",
+    "start": "node server.js"
+  },
+  "author": "Ilegubo",
+  "license": "MIT",
+  "dependencies": {
+    "ejs": "^6.0.1",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

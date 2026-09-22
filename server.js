@@ -30,22 +30,26 @@ app.use(express.static(path.join(__dirname, 'public')));
   */
 app.get('/', async (req, res) => {
     const title = 'Home';
-    res.render('home', { title });
+    const template = 'home';
+    res.render(template, { title });
 });
 
 app.get('/organizations', async (req, res) => {
     const title = 'Our Partner Organizations';
-    res.render('organizations', { title });
+    const template = 'organizations';
+    res.render(template, { title });
 });
 
 app.get('/projects', async (req, res) => {
     const title = 'Service Projects';
-    res.render('projects', { title });
+    const template = 'projects';
+    res.render(template, { title });
 });
 
 app.get('/categories', async (req, res) => {
     const title = 'Categories';
-    res.render('categories', { title });
+    const template = 'categories';
+    res.render(template, { title });
 });
 
 app.listen(PORT, () => {

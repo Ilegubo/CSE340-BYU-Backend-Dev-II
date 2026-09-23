@@ -1,9 +1,18 @@
 <%- include('partials/header') %>
 <main>
     <h1><%= title %></h1>
-    <p>Environmental</p>
-    <p>Educational</p>
-    <p>Community Service</p>
-    <p>Health & Wellness</p>
+
+    <p>Browse the categories of projects available:</p>
+
+    <ul class="categories-list">
+        <% categories.forEach(category => { %>
+            <li class="category-card">
+                <h2><%= category.name %></h2>
+                <% if (category.description) { %>
+                    <p><%= category.description %></p>
+                <% } %>
+            </li>
+        <% }) %>
+    </ul>
 </main>
 <%- include('partials/footer') %>

@@ -55,3 +55,31 @@ VALUES
     (3, 'Family Resource Fair', 'Connect families with local services and community support.', 'Central Square', '2026-11-03'),
     (3, 'After-School Program', 'Provide tutoring and enrichment activities for students.', 'Greenfield', '2026-11-14'),
     (3, 'Community Wellness Day', 'Host a wellness event with screenings and local services.', 'Harrison', '2026-11-25');
+
+    -- ========================================
+-- Categories Table
+-- ========================================
+CREATE TABLE categories (
+    category_id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT
+);
+
+-- ========================================
+-- Update Projects Table to Reference Categories
+-- ========================================
+ALTER TABLE projects
+ADD COLUMN category_id INTEGER,
+ADD CONSTRAINT fk_projects_category
+    FOREIGN KEY (category_id)
+    REFERENCES categories(category_id);
+
+-- ========================================
+-- Insert Sample Categories
+-- ========================================
+INSERT INTO categories (name, description)
+VALUES
+('Community Service', 'Projects that improve neighborhoods and support local communities.'),
+('Education', 'Projects that provide learning opportunities and resources.'),
+('Health & Wellness', 'Projects that promote health, safety, and well-being.'),
+('Environment', 'Projects focused on sustainability and environmental care.');

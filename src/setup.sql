@@ -1,18 +1,20 @@
--- Create the organization table
+-- ========================================
+-- Organization Table
+-- ========================================
 CREATE TABLE organization (
-    org_id SERIAL PRIMARY KEY,          -- unique identifier
-    org_name VARCHAR(100) NOT NULL,     -- organization name
-    org_address VARCHAR(255),           -- optional address
-    org_email VARCHAR(100) UNIQUE,      -- optional email, must be unique
-    created_at TIMESTAMP DEFAULT NOW()  -- auto timestamp when row is added
+    organization_id SERIAL PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    description TEXT NOT NULL,
+    contact_email VARCHAR(255) NOT NULL,
+    logo_filename VARCHAR(255) NOT NULL
 );
 
--- Insert sample data
-INSERT INTO organization (org_name, org_address, org_email)
-VALUES
-    ('Tech Solutions Ltd', '123 Innovation Street, Accra', 'info@techsolutions.com'),
-    ('Green Earth NGO', '45 Sustainability Ave, Kumasi', 'contact@greenearth.org'),
-    ('EduFuture Academy', '78 Learning Road, Tamale', 'admin@edufuture.edu');
 
--- Verify the data
-SELECT * FROM organization;
+-- ========================================
+-- Insert sample data: Organizations
+-- ========================================
+INSERT INTO organization (name, description, contact_email, logo_filename)
+VALUES
+('BrightFuture Builders', 'A nonprofit focused on improving community infrastructure through sustainable construction projects.', 'info@brightfuturebuilders.org', 'brightfuture-logo.png'),
+('GreenHarvest Growers', 'An urban farming collective promoting food sustainability and education in local neighborhoods.', 'contact@greenharvest.org', 'greenharvest-logo.png'),
+('UnityServe Volunteers', 'A volunteer coordination group supporting local charities and service initiatives.', 'hello@unityserve.org', 'unityserve-logo.png');

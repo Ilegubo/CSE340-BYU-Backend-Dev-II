@@ -1,0 +1,29 @@
+Changes Made to Resolve App Crash
+====================================
+
+1. nodemon.json
+---------------
+File: nodemon.json
+Change:
+  Before:
+    "exec": "node server.js"
+  After:
+    "exec": "node --env-file=.env server.js"
+
+Reason:
+  - The application relies on environment variables defined in the .env file (such as DB_URL and ENABLE_SQL_LOGGING).
+  - In server.js, the app runs testConnection() on startup, which queries the database using src/models/db.js.
+  - When running "npm run dev", Node was not loading the .env file. Because of this, process.env.DB_URL was undefined.
+  - When DB_URL is undefined, the PostgreSQL client (pg) defaults to connecting to a local database at localhost:5432 (127.0.0.1:5432).
+  - Because no PostgreSQL server is running locally, Node threw an ECONNREFUSED connection error.
+  - Passing "--env-file=.env" tells Node to automatically load the variables from .env on start, allowing the application to successfully connect to your remote Render PostgreSQL database.
+
+2. package.json (Dependency)
+----------------------------
+File: package.json
+Change:
+  Added: "pg": "^8.23.0" under "dependencies"
+
+Reason:
+  - src/models/db.js imports { Pool } from 'pg'.
+  - Without the "pg" package listed in package.json and installed in node_modules, Node would fail immediately with "Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'pg'".

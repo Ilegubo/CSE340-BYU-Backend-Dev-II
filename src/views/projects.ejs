@@ -1,11 +1,19 @@
 <%- include('partials/header') %>
 <main>
     <h1><%= title %></h1>
-        <h2>Upcoming Service Projects</h2>
-<ul>
-    <li>Park Cleanup - Join us to clean up local parks and make them beautiful!</li>
-    <li>Food Drive - Help collect and distribute food to those in need.</li>
-    <li>Community Tutoring - Volunteer to tutor students in various subjects.</li>
-</ul>
+
+    <p>Here are a few projects undertaken by our partner organizations:</p>
+
+    <ul class="projects-list">
+        <% projects.forEach(project => { %>
+            <li class="project-card">
+                <h2><%= project.title %></h2>
+                <p><strong>Organization:</strong> <%= project.organization_name %></p>
+                <p><strong>Date:</strong> <%= project.date.toDateString() %></p>
+                <p><strong>Location:</strong> <%= project.location %></p>
+                <p><%= project.description %></p>
+            </li>
+        <% }) %>
+    </ul>
 </main>
 <%- include('partials/footer') %>

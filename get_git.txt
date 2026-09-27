@@ -1,0 +1,23 @@
+	SET GLOBAL NAME & EMAIL
+git config --global user.name "Ilegubo"
+git config --global user.email "ilegubo@gmail.com"
+
+	CREATE & LINK NEW LOCAL & REMOTE REPO
+On remote repo:	git init
+		git commit -m ""
+		git branch -M main
+		git remote add origin https://github.com/Ilegubo/repo.git
+		git push -u origin main
+
+
+	RESTORE OLD VERSION OF FILE(S)
+Opt 1: Restore just a single file
+git checkout <commit-hash> -- path/to/file.
+
+safe Opt 2: Experiment with an old version
+Look at your commit history	git log --oneline
+experiment with an old version	git checkout <commit-hash>
+
+Safe Opt 2: Safely roll back while keeping history
+git restore --source-<commit-hash> --staged --worktree .
+git commit -m "Restored older version of project"

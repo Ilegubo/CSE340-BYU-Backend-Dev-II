@@ -2,14 +2,19 @@
 <main>
     <h1><%= title %></h1>
 
-    <p>Here are a few projects undertaken by our partner organizations:</p>
+    <p>Here are the next upcoming service projects undertaken by our partner organizations:</p>
 
     <ul class="projects-list">
         <% projects.forEach(project => { %>
             <li class="project-card">
-                <h2><%= project.title %></h2>
-                <p><strong>Organization:</strong> <%= project.organization_name %></p>
-                <p><strong>Date:</strong> <%= project.date.toDateString() %></p>
+                <h2>
+                    <a href="/project/<%= project.project_id %>"><%= project.title %></a>
+                </h2>
+                <p>
+                    <strong>Organization:</strong> 
+                    <a href="/organization/<%= project.organization_id %>"><%= project.organization_name %></a>
+                </p>
+                <p><strong>Date:</strong> <%= new Date(project.date).toLocaleDateString() %></p>
                 <p><strong>Location:</strong> <%= project.location %></p>
                 <p><%= project.description %></p>
             </li>

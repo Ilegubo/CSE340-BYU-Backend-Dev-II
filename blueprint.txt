@@ -1,0 +1,678 @@
+================================================================================
+          CSE 340 BACKEND DEVELOPMENT II: MVC ARCHITECTURE BLUEPRINT
+================================================================================
+Workspace Location: /home/Ilegubo/Documents/CSE340-BYU-Backend-Dev-II
+Reference Sessions: Session 6a07c90a & Session 111cfa3c
+Git Commits:        07c8676 (MVC Foundation) & 6fa50ba (Dynamic MVC Implementation)
+================================================================================
+
+--------------------------------------------------------------------------------
+TABLE OF CONTENTS
+--------------------------------------------------------------------------------
+1. WHAT WAS IMPLEMENTED IN THE IMMEDIATE PAST SESSION
+2. EXACT FILE-BY-FILE CODE CHANGES
+3. THE REUSABLE UNIVERSAL MVC BLUEPRINT (STEP-BY-STEP RECIPE)
+4. ARCHITECTURAL DATA FLOW & COMPONENT MATRIX
+5. CORE FUNDAMENTALS: WHAT YOU MUST MASTER
+   - 5.1 JavaScript & Node.js
+   - 5.2 Express.js Routing & Middleware Mechanics
+   - 5.3 PostgreSQL, Relational Schema & Secure Queries
+   - 5.4 EJS Templating & Dynamic Server-Side Rendering
+   - 5.5 Error Handling & 404/500 Strategies
+6. VERIFICATION & TESTING CHECKLIST
+
+
+================================================================================
+1. WHAT WAS IMPLEMENTED IN THE IMMEDIATE PAST SESSION
+================================================================================
+
+In the immediate past session (Session 6a07c90a, verified in Session 111cfa3c,
+and committed in Git commit 6fa50ba), our monolithic/basic routes were transformed
+into a dynamic, relational Model-View-Controller (MVC) architecture.
+
+Key Enhancements Achieved:
+1. Dynamic Route Parameters:
+   Implemented '/project/:id' and '/organization/:id' routes that dynamically
+   extract the resource ID from the URL path (req.params.id) and render dedicated
+   detail pages.
+
+2. Upcoming Projects Limiting & Filtering:
+   Upgraded the general projects view from fetching all unconstrained records to
+   retrieving only the next 5 upcoming projects (date >= CURRENT_DATE), sorted in
+   ascending order (ORDER BY date ASC), and restricted using SQL parameterized
+   limits (LIMIT $1).
+
+3. Relational Database Joins:
+   Joined the 'projects' table with the 'organization' table on the foreign key
+   p.organization_id = o.organization_id. This permits projects to display their
+   human-readable partner organization name and links without storing duplicate
+   organization names in the projects table.
+
+4. Interconnected Navigation:
+   - Projects list links directly to individual project detail pages.
+   - Project cards and details link directly to the sponsoring organization's page.
+   - Organization detail pages query and list all service projects associated with
+     that specific organization, linking back to project detail pages.
+
+5. Defensive Error Handling:
+   Integrated try/catch blocks across all controllers with explicit 404 validation.
+   If a requested ID does not exist in PostgreSQL, the controller creates an error
+   with status 404 and calls next(err) instead of crashing Node or hanging the request.
+
+
+================================================================================
+2. EXACT FILE-BY-FILE CODE CHANGES
+================================================================================
+
+A. MODELS (Database Layer: Data Fetching & SQL)
+-----------------------------------------------
+1. src/models/projects.js:
+   - Added getUpcomingProjects(number_of_projects = 5):
+     Queries projects where date >= CURRENT_DATE, joins organization table to
+     fetch organization_name, orders by date ASC, and applies LIMIT $1.
+   - Added getProjectDetails(id):
+     Queries a single project by project_id = $1, joining organization to get
+     organization_name. Returns result.rows[0] or null.
+   - Added getProjectsByOrganizationId(organizationId):
+     Queries projects belonging to a specific organization (WHERE organization_id = $1)
+     ordered by date.
+
+2. src/models/organizations.js:
+   - Added getOrganizationDetails(organizationId):
+     Queries organization by organization_id = $1. Returns result.rows[0] or null.
+
+
+B. CONTROLLERS (Business Logic & View Coordination)
+---------------------------------------------------
+1. src/controllers/projects.js:
+   - Renamed projectsPage -> showProjectsPage:
+     Calls getUpcomingProjects(5) and renders 'projects' with title and projects list.
+   - Added showProjectDetailsPage:
+     Extracts id = req.params.id, calls getProjectDetails(id), validates existence
+     (throwing 404 if not found), and renders 'project' view.
+
+2. src/controllers/organizations.js:
+   - Renamed organizationsPage -> showOrganizationsPage:
+     Fetches all organizations and renders 'organizations' view.
+   - Added showOrganizationDetailsPage:
+     Extracts req.params.id, awaits getOrganizationDetails(id) (throws 404 if missing),
+     fetches associated projects via getProjectsByOrganizationId(id), and renders
+     'organization' view.
+
+
+C. ROUTES (URL Endpoint Routing)
+--------------------------------
+1. src/routes.js:
+   - Imported new controller functions.
+   - Added route bindings for parameterized detail views:
+     router.get(['/organization/:id', '/organizations/:id'], showOrganizationDetailsPage);
+     router.get(['/project/:id', '/projects/:id'], showProjectDetailsPage);
+   - Maintained collection routes for '/', '/organizations', '/projects', '/categories'.
+
+
+D. VIEWS (EJS Presentation Templates)
+-------------------------------------
+1. src/views/project.ejs (NEW):
+   - Displays single project title, formatted date, location, full description,
+     and link to parent organization (/organization/:id).
+2. src/views/organization.ejs (NEW):
+   - Displays organization name, logo image, description, email link, and a list
+     of all upcoming service projects hosted by this organization.
+3. src/views/projects.ejs (MODIFIED):
+   - Turned project titles into links to /project/:id.
+   - Turned organization names into links to /organization/:id.
+   - Formatted project dates cleanly with new Date(project.date).toLocaleDateString().
+4. src/views/organizations.ejs (MODIFIED):
+   - Added link wrapping organization names pointing to /organization/:id.
+
+
+E. STYLING (CSS)
+----------------
+1. public/css/main.css:
+   - Added styling for .project-card, .projects-list, and .project-details to
+     render readable cards, margins, and link states.
+
+
+================================================================================
+3. THE REUSABLE UNIVERSAL MVC BLUEPRINT (STEP-BY-STEP RECIPE)
+================================================================================
+
+Follow this exact folder hierarchy and sequence whenever starting a new project.
+
+--------------------------------------------------------------------------------
+DIRECTORY SKELETON
+--------------------------------------------------------------------------------
+my-mvc-project/
+├── public/
+│   ├── css/
+│   │   └── main.css
+│   └── images/
+├── src/
+│   ├── controllers/
+│   │   ├── [resource].js          <-- Controller: (req, res, next)
+│   │   ├── errors.js              <-- Error simulation/handling
+│   │   └── index.js               <-- Home controller
+│   ├── models/
+│   │   ├── db.js                  <-- PostgreSQL pool configuration
+│   │   └── [resource].js          <-- Model: queries, joins, parameterized SQL
+│   ├── views/
+│   │   ├── partials/
+│   │   │   ├── header.ejs         <-- Reusable header partial
+│   │   │   └── footer.ejs         <-- Reusable footer partial
+│   │   ├── [resource].ejs         <-- Single item detail view
+│   │   └── [resources].ejs        <-- Multi-item collection view
+│   └── routes.js                  <-- Express router URL mapping
+├── .env                           <-- Environment variables (PORT, DB_URL, NODE_ENV)
+├── package.json                   <-- Node metadata ("type": "module")
+└── server.js                      <-- App setup, middleware pipeline, startup
+
+
+--------------------------------------------------------------------------------
+STEP 1: PACKAGE.JSON
+--------------------------------------------------------------------------------
+Enable ES Modules so you can use 'import'/'export':
+
+{
+  "name": "mvc-app",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ejs": "^6.0.1",
+    "express": "^5.2.1",
+    "pg": "^8.23.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
+
+
+--------------------------------------------------------------------------------
+STEP 2: DATABASE CONNECTION POOL (src/models/db.js)
+--------------------------------------------------------------------------------
+import { Pool } from 'pg';
+
+const pool = new Pool({
+    connectionString: process.env.DB_URL,
+    ssl: { rejectUnauthorized: false } // Required for cloud databases (Neon/Supabase)
+});
+
+let db = pool;
+
+// Query logging in development
+if (process.env.NODE_ENV === 'development' && process.env.ENABLE_SQL_LOGGING === 'true') {
+    db = {
+        async query(text, params) {
+            const start = Date.now();
+            const res = await pool.query(text, params);
+            const duration = Date.now() - start;
+            console.log('SQL Query:', {
+                text: text.replace(/\s+/g, ' ').trim(),
+                duration: `${duration}ms`,
+                rows: res.rowCount
+            });
+            return res;
+        },
+        async close() {
+            await pool.end();
+        }
+    };
+}
+
+export const testConnection = async () => {
+    try {
+        const result = await db.query('SELECT NOW() as current_time');
+        console.log('Database connected successfully:', result.rows[0].current_time);
+        return true;
+    } catch (error) {
+        console.error('Database connection failed:', error.message);
+        throw error;
+    }
+};
+
+export default db;
+
+
+--------------------------------------------------------------------------------
+STEP 3: MODEL LAYER (src/models/[resource].js)
+--------------------------------------------------------------------------------
+- Models NEVER touch req or res.
+- Models execute SQL queries and return pure JavaScript objects/arrays.
+- ALWAYS use parameterized queries ($1, $2) to eliminate SQL injection.
+
+import db from './db.js';
+
+// Get list with JOIN and parameter limit
+export const getUpcomingItems = async (limit = 5) => {
+    const query = `
+        SELECT 
+            i.item_id,
+            i.title,
+            i.date,
+            i.category_id,
+            c.name AS category_name
+        FROM items i
+        JOIN categories c ON i.category_id = c.category_id
+        WHERE i.date >= CURRENT_DATE
+        ORDER BY i.date ASC
+        LIMIT $1;
+    `;
+    const result = await db.query(query, [limit]);
+    return result.rows;
+};
+
+// Get single record by ID
+export const getItemById = async (id) => {
+    const query = `
+        SELECT 
+            i.item_id,
+            i.title,
+            i.description,
+            i.date,
+            c.name AS category_name
+        FROM items i
+        JOIN categories c ON i.category_id = c.category_id
+        WHERE i.item_id = $1;
+    `;
+    const result = await db.query(query, [id]);
+    return result.rows.length > 0 ? result.rows[0] : null;
+};
+
+
+--------------------------------------------------------------------------------
+STEP 4: CONTROLLER LAYER (src/controllers/[resource].js)
+--------------------------------------------------------------------------------
+- Receives (req, res, next).
+- Extracts inputs (req.params, req.query, req.body).
+- Calls model functions.
+- Validates data and returns 404 error via next(err) if not found.
+- Calls res.render(templateName, dataPayload).
+
+import { getUpcomingItems, getItemById } from '../models/[resource].js';
+
+export const showItemsPage = async (req, res, next) => {
+    try {
+        const items = await getUpcomingItems(5);
+        res.render('items', {
+            title: 'Upcoming Items',
+            items
+        });
+    } catch (error) {
+        next(error); // Passes error to central Express error handler
+    }
+};
+
+export const showItemDetailPage = async (req, res, next) => {
+    try {
+        const id = req.params.id;
+        const item = await getItemById(id);
+
+        if (!item) {
+            const err = new Error(`Item #${id} not found`);
+            err.status = 404;
+            return next(err);
+        }
+
+        res.render('item', {
+            title: item.title,
+            item
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+--------------------------------------------------------------------------------
+STEP 5: ROUTE DEFINITIONS (src/routes.js)
+--------------------------------------------------------------------------------
+- Keeps routes clean and readable. Maps HTTP methods + URLs to controller actions.
+
+import express from 'express';
+import { homePage } from './controllers/index.js';
+import { showItemsPage, showItemDetailPage } from './controllers/[resource].js';
+
+const router = express.Router();
+
+router.get('/', homePage);
+router.get('/items', showItemsPage);
+router.get('/item/:id', showItemDetailPage);
+
+export default router;
+
+
+--------------------------------------------------------------------------------
+STEP 6: VIEW TEMPLATES (src/views/)
+--------------------------------------------------------------------------------
+
+Header Partial: src/views/partials/header.ejs
+--------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/items">Items</a></li>
+        </ul>
+    </nav>
+
+Footer Partial: src/views/partials/footer.ejs
+--------------------------------------------
+    <footer>
+        <p>&copy; <%= new Date().getFullYear() %> Service Network</p>
+    </footer>
+</body>
+</html>
+
+Collection Template: src/views/items.ejs
+---------------------------------------
+<%- include('partials/header') %>
+<main>
+    <h1><%= title %></h1>
+    <% if (items && items.length > 0) { %>
+        <ul>
+            <% items.forEach(item => { %>
+                <li>
+                    <h2><a href="/item/<%= item.item_id %>"><%= item.title %></a></h2>
+                    <p>Category: <%= item.category_name %></p>
+                    <p>Date: <%= new Date(item.date).toLocaleDateString() %></p>
+                </li>
+            <% }) %>
+        </ul>
+    <% } else { %>
+        <p>No items found.</p>
+    <% } %>
+</main>
+<%- include('partials/footer') %>
+
+Detail Template: src/views/item.ejs
+----------------------------------
+<%- include('partials/header') %>
+<main>
+    <h1><%= item.title %></h1>
+    <p><strong>Category:</strong> <%= item.category_name %></p>
+    <p><strong>Date:</strong> <%= new Date(item.date).toLocaleDateString() %></p>
+    <p><strong>Description:</strong> <%= item.description %></p>
+    <p><a href="/items">&larr; Back to all items</a></p>
+</main>
+<%- include('partials/footer') %>
+
+
+--------------------------------------------------------------------------------
+STEP 7: APPLICATION ENTRY POINT (server.js)
+--------------------------------------------------------------------------------
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import router from './src/routes.js';
+import { testConnection } from './src/models/db.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+const NODE_ENV = process.env.NODE_ENV?.toLowerCase() || 'production';
+
+// View Engine
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'src/views'));
+
+// Middleware
+app.use(express.static(path.join(__dirname, 'public')));
+app.use((req, res, next) => {
+    res.locals.NODE_ENV = NODE_ENV;
+    next();
+});
+
+// Routes
+app.use(router);
+
+// Centralized Error Handler
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    const status = err.status || 500;
+    res.status(status).render('error', {
+        title: `Error ${status}`,
+        message: err.message
+    });
+});
+
+// Server Initialization
+app.listen(PORT, async () => {
+    try {
+        await testConnection();
+        console.log(`Server listening at http://localhost:${PORT} [${NODE_ENV}]`);
+    } catch (error) {
+        console.error('Failed to connect to database at startup:', error);
+    }
+});
+
+
+================================================================================
+4. ARCHITECTURAL DATA FLOW & COMPONENT MATRIX
+================================================================================
+
+REQUEST-RESPONSE FLOW:
+---------------------
+  1. Browser sends HTTP Request (e.g. GET /project/3)
+         │
+         ▼
+  2. server.js executes global middleware (static files, request logger, res.locals)
+         │
+         ▼
+  3. src/routes.js matches URL pattern '/project/:id'
+         │
+         ▼
+  4. src/controllers/projects.js executes showProjectDetailsPage(req, res, next)
+     - Extracts ID: req.params.id ("3")
+         │
+         ▼
+  5. src/models/projects.js executes getProjectDetails(3)
+     - Formulates parameterized SQL: SELECT ... WHERE p.project_id = $1
+         │
+         ▼
+  6. PostgreSQL executes query and returns data row
+         │
+         ▼
+  7. Model returns plain JavaScript object to Controller
+         │
+         ▼
+  8. Controller validates object (handles 404 if null)
+     - Calls res.render('project', { title, project })
+         │
+         ▼
+  9. EJS Engine in src/views/ compiles template + data + partials into HTML
+         │
+         ▼
+ 10. Express sends HTTP 200 Response (text/html) back to Browser
+
+
+COMPONENT RESPONSIBILITY MATRIX:
+--------------------------------
++-------------------+----------------------------+-----------------------------+
+| LAYER             | PRIMARY RESPONSIBILITIES   | NEVER DO THIS HERE          |
++-------------------+----------------------------+-----------------------------+
+| Model             | - Direct database queries  | - Access req or res objects |
+| (src/models/)     | - SQL parameterized queries| - Generate HTML markup      |
+|                   | - Returns pure JS objects  | - Redirect browser          |
++-------------------+----------------------------+-----------------------------+
+| Controller        | - Coordinates model & view | - Write raw SQL queries     |
+| (src/controllers/)| - Extracts req.params/body | - Build full HTML pages     |
+|                   | - Validates data / handles |                             |
+|                   |   404/500 errors via next()|                             |
+|                   | - Calls res.render()       |                             |
++-------------------+----------------------------+-----------------------------+
+| View              | - Presentation & styling   | - Query PostgreSQL directly |
+| (src/views/)      | - HTML markup & CSS hooks  | - Modify application state  |
+|                   | - Iteration & display tags |                             |
++-------------------+----------------------------+-----------------------------+
+| Router            | - Maps HTTP verbs + paths  | - Direct DB querying        |
+| (src/routes.js)   |   to controller functions  | - Business logic            |
++-------------------+----------------------------+-----------------------------+
+
+
+================================================================================
+5. CORE FUNDAMENTALS: WHAT YOU MUST MASTER
+================================================================================
+
+5.1 JAVASCRIPT & NODE.JS FUNDAMENTALS
+-------------------------------------
+1. ES Modules (ESM):
+   - Always configure "type": "module" in package.json.
+   - When importing local files, the '.js' extension is mandatory:
+       import router from './src/routes.js';
+   - __dirname and __filename do not exist natively in ESM. Shim them:
+       import { fileURLToPath } from 'url';
+       import path from 'path';
+       const __filename = fileURLToPath(import.meta.url);
+       const __dirname = path.dirname(__filename);
+
+2. Asynchronous JavaScript (Promises & async/await):
+   - Database operations are non-blocking I/O. They return Promises.
+   - Functions using await must be marked async:
+       const showPage = async (req, res, next) => { ... }
+   - Always await model calls:
+       const data = await getModelData();
+   - Never forget to wrap async controller logic in try/catch to capture
+     rejections and forward them to next(error).
+
+3. Destructuring & Array Operations:
+   - Object destructuring extracts fields cleanly:
+       const { id } = req.params;
+   - Array looping in templates uses forEach():
+       projects.forEach(project => { ... })
+
+
+5.2 EXPRESS.JS MECHANICS
+------------------------
+1. The Middleware Signature (req, res, next):
+   - req: Incoming request details (headers, params, query, body).
+   - res: Response methods (render, send, status, redirect).
+   - next: Callback to trigger the next middleware or error handler.
+   - Forgetting to call res.render() or next() leaves the browser hanging.
+
+2. Route Parameters vs Query Parameters:
+   - Route Parameter (/project/:id):
+     Identifies a specific resource entity (e.g. /project/3).
+     Accessed via req.params.id.
+   - Query Parameter (/projects?limit=5&category=2):
+     Used for optional filters, sorting, or pagination.
+     Accessed via req.query.limit.
+
+3. Global Template State via res.locals:
+   - Variables assigned to res.locals (e.g. res.locals.NODE_ENV) are automatically
+     exposed to all rendered templates without passing them manually in every
+     render call.
+
+
+5.3 POSTGRESQL & RELATIONAL DATABASE FUNDAMENTALS
+------------------------------------------------
+1. Relational Schema & Foreign Keys:
+   - Normalization separates entities into distinct tables to eliminate redundancy.
+   - The 'projects' table holds 'organization_id' as a foreign key pointing to
+     the 'organization' table's primary key.
+
+2. SQL Joins:
+   - An INNER JOIN combines matching rows from both tables:
+       SELECT p.title, o.name AS organization_name
+       FROM projects p
+       JOIN organization o ON p.organization_id = o.organization_id;
+   - Renaming with 'AS' (aliasing) prevents column name collisions in result objects.
+
+3. SQL Injection Prevention & Parameterized Queries:
+   - NEVER concatenate strings into SQL queries:
+       BAD:  `SELECT * FROM projects WHERE id = ` + req.params.id; // VULNERABLE!
+   - ALWAYS use parameter placeholders ($1, $2, etc.):
+       GOOD: const query = `SELECT * FROM projects WHERE id = $1`;
+             const result = await db.query(query, [req.params.id]);
+   - The PostgreSQL engine parses query structure first, treating parameters
+     strictly as inert data, rendering SQL injection impossible.
+
+4. Connection Pooling (pg.Pool):
+   - Creating individual database connections on every request adds heavy latency.
+   - A connection pool keeps a warm pool of connections open and reuses them.
+   - In cloud databases (Neon, Supabase, Render), use:
+       ssl: { rejectUnauthorized: false }
+     to prevent certificate verification failures on self-signed certs.
+
+
+5.4 EJS TEMPLATING & DYNAMIC SERVER-SIDE RENDERING
+--------------------------------------------------
+1. The Three EJS Delimiter Tags:
+   - <%= expression %> : HTML-escaped output. Sanitizes <, >, &, ", preventing XSS.
+     Use for displaying all text from the database: <%= project.title %>
+   - <%- expression %> : Raw / unescaped output.
+     Use ONLY for including partial templates: <%- include('partials/header') %>
+   - <% code %>        : JavaScript control flow (no output).
+     Use for loops and conditionals: <% if (item) { %> ... <% } %>
+
+2. Formatting Dates in EJS:
+   - PostgreSQL timestamps arrive in Node as JS Date objects.
+   - Format cleanly in template:
+     <%= new Date(project.date).toLocaleDateString() %>
+
+
+5.5 ERROR HANDLING STRATEGIES
+-----------------------------
+1. 404 (Resource Not Found):
+   - When a query for an ID returns zero rows, don't render an empty template.
+   - Explicitly handle it:
+       if (!item) {
+           const err = new Error('Resource not found');
+           err.status = 404;
+           return next(err);
+       }
+
+2. Centralized 4-Argument Error Middleware:
+   - Express distinguishes error middleware by having exactly 4 parameters:
+       app.use((err, req, res, next) => {
+           const status = err.status || 500;
+           res.status(status).render('error', { title: 'Error', message: err.message });
+       });
+
+
+================================================================================
+6. VERIFICATION & TESTING CHECKLIST
+================================================================================
+
+Before deploying or considering an MVC feature complete:
+
+[ ] 1. Syntax Check:
+       node -c server.js
+       node -c src/routes.js
+       node -c src/controllers/*.js
+       node -c src/models/*.js
+
+[ ] 2. Database Connection:
+       Verify console output shows 'Database connected successfully' on startup.
+
+[ ] 3. Collection Endpoint Test:
+       curl -I http://localhost:3000/projects
+       -> Expect HTTP 200 OK
+
+[ ] 4. Valid Detail Endpoint Test:
+       curl -I http://localhost:3000/project/1
+       -> Expect HTTP 200 OK with correct project title and organization link.
+
+[ ] 5. Invalid Detail Endpoint Test:
+       curl -I http://localhost:3000/project/99999
+       -> Expect HTTP 404 Not Found
+
+[ ] 6. Relational Cross-Links:
+       - Open /projects in browser. Click project title -> opens /project/:id.
+       - Inside /project/:id, click organization link -> opens /organization/:id.
+       - Inside /organization/:id, confirm projects list contains active links.
+================================================================================

@@ -75,4 +75,5 @@ const getProjectDetails = async (id) => {
     return result.rows.length > 0 ? result.rows[0] : null;
 };
 
+
 export { getAllProjects, getProjectsByOrganizationId, getUpcomingProjects, getProjectDetails };

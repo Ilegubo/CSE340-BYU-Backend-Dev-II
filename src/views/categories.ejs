@@ -7,7 +7,7 @@
     <ul class="categories-list">
         <% categories.forEach(category => { %>
             <li class="category-card">
-                <h2><%= category.name %></h2>
+                <h2><a href="/category/<%= category.category_id %>"><%= category.name %></a></h2>
                 <% if (category.description) { %>
                     <p><%= category.description %></p>
                 <% } %>

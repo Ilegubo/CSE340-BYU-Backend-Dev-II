@@ -31,23 +31,14 @@ body {
   
 label {
     display: block;
-    font-size: .8rem;
-    color: purple;
+    color: darkslateblue;
     padding-top: .2rem;
-}
-h3 {
-    font-size: .9rem;
-    color: var(--orange-red);
-    margin: 1.5rem 0 .2rem 0;
-    border-bottom: 1px solid hsl(0, 0%, 93%);
+    font-size: 1.1rem;
 }
 
 input[type=text],
-input[type=tel],
-input[type=date],
 input[type=email],
-textarea,
-select {
+textarea {
     display: block;
     margin: .1rem 0 1rem 0 ;
     padding: .3rem;
@@ -58,6 +49,7 @@ select {
     font-size: 1rem;
     color: #3D405B;
     width: 250px;
+    min-height: 2rem;
 }
 
 input:required {border-left-color: #d70000;}
@@ -66,48 +58,27 @@ input:required:valid{border-left-color: green;}
 
 button[type=submit] {
     text-align: center;
-    background-color: #97b34c;
-    color: white;
-    border-radius: 1rem;
-    padding: .75rem 1.5rem;
-    margin: 2rem 0;
+    border-radius: 16px;
+    padding: 3px;
+    margin: 1rem 1.5rem;
     font-size: 1.2rem;
     -webkit-appearance: none;
     appearance: none;
-    margin: 5px;
     font-weight: bold;
     border: 2px solid transparent;
+    background: #e8f4fd;
+    color: #0066cc;
 
   }
   input:-webkit-autofill{
     -webkit-text-fill-color: #3D405B;
   }
   
-  #results {
-    background-color: #F4F1DE;
-    padding: 0 1rem;
-    border: 1px solid #E07A5F;
-    border-radius: 6px;  
-    }
 
-    .textarea {
-        display: flex;
-        flex-direction: column;
-    }
-
-    fieldset {
-        border-radius: 12px;
-        border: 1px transparent hsl(0, 0%, 60%);
-        box-shadow: 2px 1px 1px hsla(0, 0%, 60%, .2);
-    }
 
     button[type=submit]:hover {
         cursor: pointer;
-        background-color: var(--secondary-blue);
-        color: black;
-        box-shadow: 2px 2px 2px hsla(0, 0%, 60%, .2);
-    }
+        background: #0066cc;
+        color: #ffffff;
 
-    input[type=datetime-local] {
-        display: none;
     }

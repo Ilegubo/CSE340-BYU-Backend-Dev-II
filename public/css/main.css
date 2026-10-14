@@ -145,4 +145,18 @@ body {
     background-color: #d1ecf1;
     border-color: #bee5eb;
 }
-}                
+}
+
+a {
+    text-decoration: none;
+    padding: 3px;
+}
+
+a:hover {
+    font-weight: bold;
+    border: 1px solid #0066cc;
+    border-radius: 16px;
+    background: #b6d8f2;
+    padding: 6px;
+
+}

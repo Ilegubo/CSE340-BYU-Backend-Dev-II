@@ -1,0 +1,241 @@
+================================================================================
+WEEK 03 COACHING SESSION TRANSCRIPT
+Student: Ilegubo Kofi Owusu
+Role: Learning Coach & Software Mentor
+Course: Web Backend Architecture (Node.js / Express / EJS / PostgreSQL)
+================================================================================
+
+COACH:
+Welcome! Just to be clear from the start, this is a coaching session, not a test. It is perfectly okay—and even encouraged—to say 'I don't know' or 'I made a mistake.' That's the fastest way we'll learn today.
+
+I am here as your supportive, non-judgmental Learning Coach and Software Mentor. We will walk through your assignment together at your pace, and at the end of our session, I will provide the complete, downloadable text transcript for your records.
+
+To get us started, could you please confirm your name and let me know how you're feeling about this week's assignment?
+
+--------------------------------------------------------------------------------
+STUDENT (Ilegubo Kofi Owusu):
+Ilegubo Kofi Owusu
+
+--------------------------------------------------------------------------------
+COACH:
+It is great to work with you today, Ilegubo! 
+
+Let's dive into our first topic: Models. 
+
+Could you please paste a non-trivial code snippet of a model function from your project—specifically one that accepts a parameter and uses it in an SQL query?
+
+--------------------------------------------------------------------------------
+STUDENT (Ilegubo Kofi Owusu):
+const getProjectDetails = async (id) => {
+    const query = `
+        SELECT
+            p.project_id,
+            p.title,
+            p.description,
+            p.date,
+            p.location,
+            p.organization_id,
+            o.name AS organization_name
+        FROM projects p
+        JOIN organization o ON p.organization_id = o.organization_id
+        WHERE p.project_id = $1;
+    `;
+
+    const queryParams = [id];
+    const result = await db.query(query, queryParams);
+
+    return result.rows.length > 0 ? result.rows[0] : null;
+};
+
+--------------------------------------------------------------------------------
+COACH:
+That is a clean and well-structured model function! 
+
+Looking at your `WHERE p.project_id = $1` clause and the `queryParams` array, can you explain what this parameter passing does and why you chose to use `$1` instead of concatenating the `id` directly into the SQL string?
+
+--------------------------------------------------------------------------------
+STUDENT (Ilegubo Kofi Owusu):
+this parameter passing allows the code to add the query parameter to the query later. I am using specifically because I want pass the query parameter as a read only material in proper words, only as a query parameter. What node does is to send the two seperately through different streams so that sql injection is prevented
+
+--------------------------------------------------------------------------------
+COACH:
+Spot on! Parameterized queries ensure the database driver treats user input strictly as literal data rather than executable code, which completely shuts down SQL injection attacks.
+
+That wraps up our discussion on Models. Let's move to Topic 2: Views.
+
+Could you share a non-trivial EJS snippet from your project that inserts dynamic data directly into a link (such as an `href` attribute)?
+
+--------------------------------------------------------------------------------
+STUDENT (Ilegubo Kofi Owusu):
+<%- include('partials/header') %>
+<main>
+    <h1><%= category.name %></h1>
+
+    <% if (category.description) { %>
+        <p><%= category.description %></p>
+    <% } %>
+
+    <h3>Service Projects</h3>
+    <% if (projects && projects.length > 0) { %>
+        <ul class="projects-list">
+            <% projects.forEach(project => { %>
+                <li class="project-card">
+                    <h2>
+                        <a href="/project/<%= project.project_id %>"><%= project.title %></a>
+                    </h2>
+                    <% if (project.organization_name) { %>
+                        <p>
+                            <strong>Organization:</strong> 
+                            <a href="/organization/<%= project.organization_id %>"><%= project.organization_name %></a>
+                        </p>
+                    <% } %>
+                    <% if (project.date) { %>
+                        <p><strong>Date:</strong> <%= new Date(project.date).toLocaleDateString() %></p>
+                    <% } %>
+                    <% if (project.location) { %>
+                        <p><strong>Location:</strong> <%= project.location %></p>
+                    <% } %>
+                    <% if (project.description) { %>
+                        <p><%= project.description %></p>
+                    <% } %>
+                </li>
+            <% }) %>
+        </ul>
+    <% } else { %>
+        <p>No service projects currently associated with this category.</p>
+    <% } %>
+
+    <p><a href="/categories">&larr; Back to all categories</a></p>
+</main>
+<%- include('partials/footer') %>
+
+--------------------------------------------------------------------------------
+COACH:
+This is a clean, readable EJS template with solid conditional checks.
+
+Notice how you build dynamic links like `<a href="/project/<%= project.project_id %>">` and `<a href="/organization/<%= project.organization_id %>">`. 
+
+Can you explain what happens when the EJS engine renders `<%= project.project_id %>`, and why you chose to structure your URLs with these specific dynamic IDs?
+
+--------------------------------------------------------------------------------
+STUDENT (Ilegubo Kofi Owusu):
+the render function function takes two arguments, the template and locals. Locals contains object(s) and in this case our object contained is project. Project object has properties id, title, description, date, location, organization_id, name of organization. project.project_id gets the the projet id property of the object that is rendered in the html excaped ejs syntax.
+
+--------------------------------------------------------------------------------
+COACH:
+Exactly right. The `<%= %>` syntax safely evaluates `project.project_id` from the locals and HTML-escapes it directly into the URL path, giving each resource a clean, unique RESTful identifier.
+
+That brings us cleanly through Topic 2. Let's head into Topic 3: Controllers.
+
+Could you share a code snippet from your controller—specifically a route handler function that reads a route parameter from the request?
+
+--------------------------------------------------------------------------------
+STUDENT (Ilegubo Kofi Owusu):
+const showProjectDetailsPage = async (req, res, next) => {
+    try {
+        const id = req.params.id;
+        const project = await getProjectDetails(id);
+
+        if (!project) {
+            const err = new Error('Project not found');
+            err.status = 404;
+            return next(err);
+        }
+        const categories = await getCategoriesByProjectId(id);
+
+        res.render('project', {
+            title: project.title,
+            project, categories
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+--------------------------------------------------------------------------------
+COACH:
+Excellent controller handler. It handles async flow cleanly, pulls the parameter, and coordinates both models and views smoothly.
+
+Looking at how you extract `const id = req.params.id;` and subsequently handle the case where `!project`: 
+
+Can you explain how `req.params.id` gets populated by Express based on your route definition, and why you decided to call `next(err)` here instead of rendering an error view directly inside this controller?
+
+--------------------------------------------------------------------------------
+STUDENT (Ilegubo Kofi Owusu):
+I created a route 'router.get(['/project/:id', '/projects/:id'], showProjectDetailsPage);' and so the controller takes the id part of that url as a query parameter. That is how req.params.id gets poplulated by Express. Is that right?
+
+--------------------------------------------------------------------------------
+COACH:
+When Express matches a path definition like `/project/:id`, the colon `:` marks `:id` as a named path segment (specifically a route parameter / path parameter, rather than a URL query parameter like `?id=123`). Express extracts whatever value sits in that position of the URL and populates `req.params.id`. So yes, your understanding of how Express captures the dynamic segment from your route definition is spot on!
+
+That covers the controller route parameter perfectly. 
+
+Now, let's step into our fourth and final required area—Topic 4: Error Handling.
+
+You've already set this up nicely with `return next(err)` in your controller! Could you please share a snippet showing how your application catches and handles errors globally (for instance, your central error-handling middleware function or where you render your 404/500 status pages)?
+
+--------------------------------------------------------------------------------
+STUDENT (Ilegubo Kofi Owusu):
+const testErrorPage = (req, res, next) => {
+    const err = new Error('This is a test error');
+    err.status = 500;
+    next(err);
+};
+
+// Export any controller functions
+export { testErrorPage };
+
+Does this snippet suffix?
+
+--------------------------------------------------------------------------------
+COACH:
+That snippet shows how you intentionally trigger and forward an error using `next(err)`. 
+
+To complete our look at your error-handling strategy, could you also share the receiving end of that error—specifically the middleware function (usually defined with four parameters: `(err, req, res, next)`) or the route handler that catches it and actually renders your error status page?
+
+--------------------------------------------------------------------------------
+STUDENT (Ilegubo Kofi Owusu):
+I do not have that in my codebase. Do I need to have that? Why do I need to implement code toGlobal error handling is essential in Node.js. Without it, unhandled rejections or runtime exceptions will either crash your entire Node process or leave incoming HTTP requests hanging indefinitely until they time out.
+
+### Why You Need It
+
+* **Crash Prevention:** An unhandled promise rejection or throw in an asynchronous task can terminate your server process.
+* **Consistent Client Responses:** Ensures clients receive a structured JSON error response (e.g., status `500` with an error message) instead of an abrupt connection close or timeout.
+* **Security & Observability:** It lets you log full stack traces internally while sanitizing details sent to users, preventing sensitive server internals or database queries from leaking.
+
+---
+
+### Where It Belongs: Controller vs. Middleware
+
+**It should not live inside `controllers/errors.js`.** 
+
+Controllers handle route-specific business logic. Global error management operates across the entire application lifecycle and is split into two layers:
+
+1. **Express Centralized Error Middleware:** Belongs in `middleware/errorHandler.js` (or similar).
+2. **Process-Level Guards:** Belongs in your entry point (`server.js` or `app.js`).
+
+---
+
+### Implementation in an Existing Codebase
+
+#### 1. Define the Centralized Error Middleware
+
+Create `middleware/errorHandler.js`:
+
+```javascript
+// middleware/errorHandler.js
+const errorHandler = (err, req, res, next) => {
+  const statusCode = err.statusCode || 500;
+  
+  // Log the error internally for debugging
+  console.error(`[Error] ${req.method} ${req.url}:`, err.stack || err.message);
+
+  res.status(statusCode).json({
+    success: false,
+    message: err.message || 'Internal Server Error',
+    // Exclude stack trace in production environments
+    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack }),
+  });
+};
+
+module.exports = errorHandler;

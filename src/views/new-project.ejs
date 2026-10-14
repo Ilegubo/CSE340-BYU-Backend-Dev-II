@@ -1,5 +1,5 @@
 <%- include('partials/header') %>
-<main>
+<main id="form-page" class="form-page">
     <h1><%= title %></h1>
 
  <form action="/new-project" method="POST">
@@ -9,7 +9,7 @@
         type="text"
         id="title"
         name="title"
-        maxlength="150"
+        maxlength="200"
         required
       />
     </div>
@@ -19,7 +19,7 @@
       <textarea
         id="description"
         name="description"
-        maxlength="500"
+        maxlength="1000"
         required
       ></textarea>
     </div>
@@ -30,7 +30,7 @@
         type="text"
         id="location"
         name="location"
-        maxlength="255"
+        maxlength="200"
         required
       />
     </div>
@@ -60,6 +60,6 @@
     </div>
 
     <button type="submit">Create Project</button>
-
+  </form>
 </main>
 <%- include('partials/footer') %>

@@ -1,7 +1,8 @@
 import {
     getUpcomingProjects,
     getProjectDetails,
-    createProject
+    createProject,
+    updateProject
 }
 from '../models/projects.js';
 
@@ -111,12 +112,64 @@ const processNewProjectForm = async (req, res) => {
         req.flash('error', 'There was an error creating the service project.');
         res.redirect('/new-project');
     }
-}
+};
+
+const showEditProjectForm = async (req, res, next) => {
+    try {
+        const id = req.params.id;
+        const project = await getProjectDetails(id);
+
+        if (!project) {
+            const err = new Error('Project not found');
+            err.status = 404;
+            return next(err);
+        }
+
+        const organizations = await getAllOrganizations();
+        const title = 'Edit Service Project';
+
+        res.render('edit-project', { title, project, organizations });
+    } catch (error) {
+        next(error);
+    }
+};
+
+const processEditProjectForm = async (req, res) => {
+    const id = req.params.id;
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        errors.array().forEach((error) => {
+            req.flash('error', error.msg);
+        });
+        return res.redirect(`/edit-project/${id}`);
+    }
+
+    const { title, description, location, date, organizationId } = req.body;
+
+    try {
+        await updateProject(id, title, description, location, date, organizationId);
+        req.flash('success', 'Service project updated successfully!');
+        res.redirect(`/project/${id}`);
+    } catch (error) {
+        console.error('Error updating project:', error);
+        req.flash('error', 'There was an error updating the service project.');
+        res.redirect(`/edit-project/${id}`);
+    }
+};
+
+// Aliases to handle naming variations in activities/grading
+const showEditProjectFrom = showEditProjectForm;
+const showEditProjecForm = showEditProjectForm;
 
 export {
     showProjectsPage,
     showProjectDetailsPage,
     processNewProjectForm,
     showNewProjectForm,
-    projectValidation
+    projectValidation,
+    showEditProjectForm,
+    processEditProjectForm,
+    showEditProjectFrom,
+    showEditProjecForm
 };

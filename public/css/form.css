@@ -38,6 +38,8 @@ label {
 
 input[type=text],
 input[type=email],
+input[type=date],
+select,
 textarea {
     display: block;
     margin: .1rem 0 1rem 0 ;
@@ -52,9 +54,9 @@ textarea {
     min-height: 2rem;
 }
 
-input:required {border-left-color: #d70000;}
-input:focus {border-left-color: black; outline:none;}
-input:required:valid{border-left-color: green;}
+input:required, select:required, textarea:required {border-left-color: #d70000;}
+input:focus, select:focus, textarea:focus {border-left-color: black; outline:none;}
+input:required:valid, select:required:valid, textarea:required:valid {border-left-color: green;}
 
 button[type=submit] {
     text-align: center;

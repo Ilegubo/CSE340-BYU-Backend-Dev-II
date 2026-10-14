@@ -99,37 +99,45 @@ const processNewOrganizationForm = async (req, res) => {
     res.redirect(`/organization/${organizationId}`);
 };
 
-const showEditOrganizationForm = async(req, res) => {
-    const organizationId = req.params.id;
-    const organizationDetails = await getOrganizationDetails(organizationId);
+const showEditOrganizationForm = async (req, res, next) => {
+    try {
+        const organizationId = req.params.id;
+        const organizationDetails = await getOrganizationDetails(organizationId);
 
-    const title = 'Edit Organization';
-    res.render('edit-organization', {title, organizationDetails})
-}
+        if (!organizationDetails) {
+            const err = new Error('Organization not found');
+            err.status = 404;
+            return next(err);
+        }
 
-const processEditOrganizationForm = async (req, res) => {
+        const title = 'Edit Organization';
+        res.render('edit-organization', { title, organizationDetails });
+    } catch (error) {
+        next(error);
+    }
+};
+
+const processEditOrganizationForm = async (req, res, next) => {
     const organizationId = req.params.id;
-    //check for validation errors
-    const results = validationREsult(req);
-    if (!results.isempty()) {
-        results.array().forEach((error)=> {
-            req.flash('error', error.msg)
-        })
-        return res.redirect(`edit-organization/${organizationId}`)
+    // Check for validation errors
+    const results = validationResult(req);
+    if (!results.isEmpty()) {
+        results.array().forEach((error) => {
+            req.flash('error', error.msg);
+        });
+        return res.redirect(`/edit-organization/${organizationId}`);
     }
 
-    const {name, description, contactEmail} = req.body;
-
-    updateOrganization(organizationId, name, description, contactEmail);
-    req.flash('success', 'Organization updated successfully')
-
-    res.redirect(`/organization-details/${organizationId}`)
-
-
-    console.log("${name}\n ${description\n ${contactEmail}");
-
-    
-}
+    try {
+        const { name, description, contactEmail } = req.body;
+        const logoFilename = req.body.logoFilename || req.body['logo-filename'] || 'placeholder-logo.png';
+        await updateOrganization(organizationId, name, description, contactEmail, logoFilename);
+        req.flash('success', 'Organization updated successfully!');
+        res.redirect(`/organization/${organizationId}`);
+    } catch (error) {
+        next(error);
+    }
+};
 
 export {
     showOrganizationsPage,

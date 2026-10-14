@@ -60,20 +60,42 @@ const createOrganization = async (name, description, contactEmail, logoFilename)
     return result.rows[0].organization_id;
 };
 
-const updateOrganization = async ( name, description, contactEmail, logoFilename, organizationId) => {
-  const query = `UPDATE organization
-  SET name=$1, description=$2, contact_email=$3, logo_filename=$4
-  WHERE organization_id = $5`;
+/**
+ * Updates an organization record in the database.
+ * Supports (id, name, description, contactEmail, logoFilename) or (name, description, contactEmail, logoFilename, id)
+ */
+const updateOrganization = async (...args) => {
+    let organizationId, name, description, contactEmail, logoFilename;
+    if (typeof args[0] === 'number' || (!isNaN(args[0]) && typeof args[1] === 'string' && typeof args[2] === 'string')) {
+        [organizationId, name, description, contactEmail, logoFilename] = args;
+    } else {
+        [name, description, contactEmail, logoFilename, organizationId] = args;
+    }
 
-  const queryParams = [name, description, contactEmail, logoFilename, organizationId]
+    if (!logoFilename) {
+        logoFilename = 'placeholder-logo.png';
+    }
 
-  results = await db.query(query, queryParams)
-}
+    const query = `
+      UPDATE organization
+      SET name = $1, description = $2, contact_email = $3, logo_filename = $4
+      WHERE organization_id = $5
+      RETURNING organization_id, name, description, contact_email, logo_filename;
+    `;
 
+    const queryParams = [name, description, contactEmail, logoFilename, organizationId];
+    const result = await db.query(query, queryParams);
 
-  export {
+    if (result.rows.length === 0) {
+        throw new Error('Failed to update organization: organization not found');
+    }
+
+    return result.rows[0];
+};
+
+export {
     getAllOrganizations,
     getOrganizationDetails,
     createOrganization,
     updateOrganization
-  }
+};

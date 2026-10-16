@@ -1,0 +1,279 @@
+======================================================================
+WEEK 04 COACHING SESSION TRANSCRIPT
+Participant: Ilegubo Owusu
+Role: Learning Coach & Software Mentor
+======================================================================
+
+[COACH]:
+Welcome! Just to be clear from the start, this is a coaching session, not a test. It is perfectly okay—and even encouraged—to say 'I don't know' or 'I made a mistake.' That's the fastest way we'll learn today.
+
+I am your Learning Coach and Software Mentor. Since we are running in a chat interface, whenever we discuss specific logic, I will ask you to paste the relevant code snippets into our chat. 
+
+To kick things off, could you please confirm your name?
+
+[ILEGUBO OWUSU]:
+Ilegubo Owusu
+
+[COACH]:
+Great to meet you, Ilegubo!
+
+Let's dive right into our first topic: **Handling Form Submissions**. 
+
+Could you share a non-trivial code snippet from your project that shows how you extract data from a request body and pass it along to your application's functions?
+
+[ILEGUBO OWUSU]:
+const organizationValidation = [
+    body('name')
+        .trim()
+        .notEmpty()
+        .withMessage('Organization name is required')
+        .isLength({ min: 3, max: 150 })
+        .withMessage('Organization name must be between 3 and 150 characters'),
+    body('description')
+        .trim()
+        .notEmpty()
+        .withMessage('Organization description is required')
+        .isLength({ max: 500 })
+        .withMessage('Organization description cannot exceed 500 characters'),
+    body('contactEmail')
+        .normalizeEmail()
+        .notEmpty()
+        .withMessage('Contact email is required')
+        .isEmail()
+        .withMessage('Please provide a valid email address')
+];
+
+const processNewOrganizationForm = async (req, res) => {
+    // Check for validation errors
+    const results = validationResult(req);
+    if (!results.isEmpty()) {
+        // Validation failed - loop through errors
+        results.array().forEach((error) => {
+            req.flash('error', error.msg);
+        });
+
+        // Redirect back to the new organization form
+        return res.redirect('/new-organization');
+    }
+
+    const { name, description, contactEmail } = req.body;
+    const logoFilename = 'placeholder-logo.png'; // Use the placeholder logo for all new organizations    
+
+    const organizationId = await createOrganization(name, description, contactEmail, logoFilename);
+    req.flash('success', 'Organization added successfully!');
+    res.redirect(`/organization/${organizationId}`);
+};
+
+[COACH]:
+Thanks for sharing that, Ilegubo! This snippet actually nicely touches on a couple of our topics today, including validation and flash messages, but let's focus on **Topic 1: Handling Form Submissions**.
+
+Looking at `processNewOrganizationForm`, could you explain in your own words what happens when `const { name, description, contactEmail } = req.body;` runs, and why you chose to extract the values this way before calling `createOrganization`?
+
+[ILEGUBO OWUSU]:
+I do not understand why we do it that way. Maybe because that is the data we pass to the request?
+
+[COACH]:
+That is super close! 
+
+When a user submits a form, the browser packages up all the input values and sends them inside the **HTTP request body**. 
+
+Express makes those values available inside `req.body`. Using `const { name, description, contactEmail } = req.body;` is a JavaScript feature called **destructuring**. It extracts just those specific properties out of `req.body` into clean individual variables so you can easily pass them into your `createOrganization(...)` function.
+
+To wrap up **Topic 1**: What do you think would happen if a form field name in your HTML template (like `name="email"`) didn't match the variable name you're trying to extract (`contactEmail`) from `req.body`?
+
+[ILEGUBO OWUSU]:
+JavaScript should throw and error?
+
+[COACH]:
+Not quite! JavaScript actually won't throw an error in that situation.
+
+Instead, because `req.body.contactEmail` doesn't exist on `req.body` (since the HTML form sent `req.body.email`), `contactEmail` will simply evaluate to `undefined`. That value then gets passed silently into `createOrganization`, which could cause database errors or save `NULL`/`undefined` values downstream.
+
+***
+
+We've covered **Topic 1**! Now let's move on to **Topic 2: Forms for Updates**.
+
+Could you share a non-trivial **EJS snippet** from your project that shows how you display an edit/update form with existing entity data pre-filled into the form fields?
+
+[ILEGUBO OWUSU]:
+Before we move to topic 2, does the browser automatically pass form elements to the request body or we have to explicitly state that.
+
+<%- include('partials/header') %>
+  <main id="form-page" class="form-page">
+    <h1>
+      <%= title %>
+    </h1>
+
+    <form action="/edit-organization/<%= organizationDetails.organization_id %>" method="POST">
+      <div class="form-group">
+        <label for="name">Organization Name</label>
+        <input type="text" id="name" value="<%= organizationDetails.name %>" name="name" required maxlength="150" />
+      </div>
+
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea id="description" name="description" required maxlength="500"><%= organizationDetails.description %></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="contactEmail">Contact Email</label>
+        <input type="email" id="contactEmail" value="<%= organizationDetails.contact_email %>" name="contactEmail" required />
+      </div>
+
+      <div class="form-group">
+        <label for="logoFilename">Logo Filename</label>
+        <input type="text" id="logoFilename" name="logoFilename" value="<%= organizationDetails.logo_filename %>" required />
+      </div>
+
+      <button type="submit">Update Organization</button>
+    </form>
+
+  </main>
+  <%- include('partials/footer') %>
+
+[COACH]:
+To answer your question first: The browser **automatically** packages and sends form elements with a `name` attribute in the request body when the form is submitted via `POST`. However, on the Express backend server side, you do need middleware (like Express's built-in `express.urlencoded({ extended: true })`) enabled so Express can parse that body data and attach it to `req.body`.
+
+***
+
+Now, looking at your update form EJS snippet for **Topic 2: Forms for Updates**:
+
+Can you explain why it's important to use `<%= organizationDetails.name %>` inside the input's `value` attribute, and what would happen if `organizationDetails` was undefined when this page rendered?
+
+[ILEGUBO OWUSU]:
+The organizationDetails executes a query to the database and returns the values organization_id, name, description, contact_email, logo_filename. Since organiationDetails holds these data, organizationDetails.name is the way to access the name of the organization. If organizationDetails was undefined, the app will display code on the screen the user may not understand if error is not handled. In simple terms, an error will be returned
+
+[COACH]:
+Spot on! You hit the nail on the head.
+
+Using `<%= organizationDetails.name %>` evaluates that database property and embeds its text directly into the HTML `value` attribute so the user sees their existing data ready to edit. And if `organizationDetails` were `undefined`, JavaScript would throw a `TypeError: Cannot read properties of undefined (reading 'name')` during template rendering, causing the server to return a 500 internal server error page (or raw error trace) to the user.
+
+***
+
+That wraps up **Topic 2**! Next, let's explore **Topic 3: Sessions and Flash Messages**.
+
+Could you share a code snippet from your project that demonstrates how you configure or use **sessions** or **flash messages** (such as `req.flash(...)`)?
+
+[ILEGUBO OWUSU]:
+const flashMiddleware = (req, res, next) => {
+    /**
+- The flash function handles both setting and getting messages
+- Called with 2 args (type, message): stores a new message
+- Called with 1 arg (type): retrieves and clears messages of that type
+- Called with 0 args: retrieves and clears all messages
+     */
+    req.flash = function(type, message) {
+        // Initialize flash storage if it doesn't exist
+        if (!req.session.flash) {
+            req.session.flash = {
+                success: [],
+                error: [],
+                warning: [],
+                info: []
+            };
+        }
+
+        // SETTING: Two arguments means we're storing a new message
+        if (type && message) {
+            // Ensure this message type's array exists
+            if (!req.session.flash[type]) {
+                req.session.flash[type] = [];
+            }
+            // Add the message to the appropriate type array
+            req.session.flash[type].push(message);
+            return;
+        }
+
+        // GETTING ONE TYPE: One argument means retrieve messages of that type
+        if (type && !message) {
+            const messages = req.session.flash[type] || [];
+            // Clear this type's messages after retrieving
+            req.session.flash[type] = [];
+            return messages;
+        }
+
+        // GETTING ALL: No arguments means retrieve all message types
+        const allMessages = req.session.flash || {
+            success: [],
+            error: [],
+            warning: [],
+            info: []
+        };
+
+        // Clear all flash messages after retrieving
+        req.session.flash = {
+            success: [],
+            error: [],
+            warning: [],
+            info: []
+        };
+
+        return allMessages;
+    };
+
+    next();
+}
+
+[COACH]:
+That is a fantastic custom middleware implementation of flash messages!
+
+Looking at how you store messages on `req.session.flash` and then clear them when retrieved: **What is the main benefit of storing these flash messages in the session instead of just passing them directly into `res.render()`?**
+
+[ILEGUBO OWUSU]:
+I think storing them in session give us a little more control on how to when to display the flash messages. In that, if the user enters data and submits, a flash message is displayed on the screen and we are able to clear the flash message from the session immediately so that when the user refreshes the page, the flash message is no longer displayed again.
+Is that it?
+
+[COACH]:
+You nailed it! That is the exact reason. 
+
+Because HTTP requests are stateless, a traditional `res.redirect()` causes the browser to make a completely new request. If you tried to use standard variables, they'd be lost during that redirect. Storing messages in `req.session` keeps them alive across the redirect, and clearing them immediately upon retrieval ensures they disappear after a single page view so refreshing doesn't show stale alerts.
+
+***
+
+We've covered **Topic 3**! That brings us to our final required topic, **Topic 4: Server-side Validation**.
+
+Could you share a code snippet showing your **server-side validation** logic and explain how it prevents invalid data from reaching your database?
+
+[ILEGUBO OWUSU]:
+const updateOrganization = async (...args) => {
+    let organizationId, name, description, contactEmail, logoFilename;
+    if (typeof args[0] === 'number' || (!isNaN(args[0]) && typeof args[1] === 'string' && typeof args[2] === 'string')) {
+        [organizationId, name, description, contactEmail, logoFilename] = args;
+    } else {
+        [name, description, contactEmail, logoFilename, organizationId] = args;
+    }
+
+    if (!logoFilename) {
+        logoFilename = 'placeholder-logo.png';
+    }
+
+    const query = `
+      UPDATE organization
+      SET name = $1, description = $2, contact_email = $3, logo_filename = $4
+      WHERE organization_id = $5
+      RETURNING organization_id, name, description, contact_email, logo_filename;
+    `;
+
+    const queryParams = [name, description, contactEmail, logoFilename, organizationId];
+    const result = await db.query(query, queryParams);
+
+    if (result.rows.length === 0) {
+        throw new Error('Failed to update organization: organization not found');
+    }
+
+    return result.rows[0];
+};
+
+the program, checks the type of input data given by the user user typeof, isNaN to match a number or string
+
+[COACH]:
+That snippet shows neat parameter handling and dynamic checking! However, looking closely at this code: `typeof args[0] === 'number'` checks the runtime data types in your backend JavaScript function, but **validation** usually happens earlier in the request pipeline to check user input rules (like checking if an email is a valid email format or if a name is too short/long before running queries).
+
+In your earlier snippet, you had a validator array:
+
+```javascript
+const organizationValidation = [
+    body('name').trim().notEmpty().isLength({ min: 3, max: 150 }),
+    body('description').trim().notEmpty().isLength({ max: 500 }),
+    body('contactEmail').normalizeEmail().isEmail()
+];

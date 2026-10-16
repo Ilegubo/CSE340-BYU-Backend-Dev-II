@@ -147,7 +147,10 @@ const assignCategoryToProject = async (projectId, categoryId) => {
     await db.query(query, [categoryId, projectId]);
 }
 
-const updateCategoryAssignments = async(projectId, categoryIds) => {
+const updateCategoryAssignments = async (projectId, categoryIds) => {
+    // Deduplicate category IDs and ensure valid integers
+    const uniqueCategoryIds = [...new Set(categoryIds.map(id => parseInt(id, 10)).filter(id => !isNaN(id)))];
+
     // First, remove existing category assignments for the project
     const deleteQuery = `
         DELETE FROM project_categories
@@ -156,10 +159,10 @@ const updateCategoryAssignments = async(projectId, categoryIds) => {
     await db.query(deleteQuery, [projectId]);
 
     // Next, add the new category assignments
-    for (const categoryId of categoryIds) {
+    for (const categoryId of uniqueCategoryIds) {
         await assignCategoryToProject(projectId, categoryId);
     }
-}
+};
 
 export {
     getAllCategories,
